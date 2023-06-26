@@ -1,9 +1,9 @@
 const cloudinary = require('cloudinary').v2;
 
-cloudinary.config({
-	cloud_name: "dwiabvnna",
-	api_key: "717476456995999",
-	api_secret: "Dk4UTEefx_Ph-1uCbYDZQwxUTc0"
+cloudinary.config({ 
+  cloud_name: 'dvclzi87c', 
+  api_key: '414231947285516', 
+  api_secret: 'cXKCkatIk00-VpFAitPSYlwrMXw' 
 });
 
 const getCloudinaryUrl = async (base64File) => {
