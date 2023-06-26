@@ -3,11 +3,22 @@ var mongoose = require('mongoose');
 var addressSchema = new mongoose.Schema({
   phone : {
     type: String,
-    required: true,
+    required: [true, 'User phone number required'],
+    validate : {
+      validator : function(num) {
+        return /\d{10}/.test(num);
+      },
+      message : props => `${props.value} is not a valid phone number!`,
+    }
   },
   zipCode : {
     type: Number,
     required: true,
+    validate : {
+      validator : function(num) {
+        return /\d{6}/.test(num);
+      },
+    }
   },
   "Flat/House/OfficeNo" : {
     type: String,
@@ -28,5 +39,7 @@ var addressSchema = new mongoose.Schema({
   Landmark : String,
   instructions : String
 }, { timestamps: true });
+
+console.log(addressSchema);
 
 module.exports = mongoose.model('Address', addressSchema);

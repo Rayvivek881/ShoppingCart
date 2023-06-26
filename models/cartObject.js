@@ -25,7 +25,14 @@ var cartObjectSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Seller'
   },
-}, { timestamps: true });
+});
 
+cartObjectSchema.pre('save', async function(next) {
+  next();
+});
+
+cartObjectSchema.post('save', async function(doc, next) {
+  console.log('CartObject saved');
+});
 
 module.exports = mongoose.model('CartObject', cartObjectSchema);
