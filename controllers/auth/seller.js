@@ -40,7 +40,7 @@ exports.loginSeller = async (req, res) => {
   try {
     const { email, password } = req.body;
     let user = await User.findOne({ email });
-    if (user != null) {
+    if (user == null) {
       return res.status(400).json({
         msg: 'User not exist with given email'
       });

@@ -14,6 +14,9 @@ exports.createProduct = async (req, res) => {
       ...req.body,
       seller: sellerId
     });
+    await Seller.updateOne({ _id : sellerId} , {
+      $addToSet : { products : product._id }
+    }, { new : true })
     return res.status(201).json({ product });
   } catch (err) {
     return res.status(500).json({ msg: 'Internal Server Error' });
@@ -67,6 +70,9 @@ exports.deleteProduct = async (req, res) => {
       return res.status(400).json({ msg: 'something went wrong' });
     }
     const product = await Product.findByIdAndDelete(productId);
+    await Seller.updateOne({ _id : sellerId }, { 
+      $pull : { products : productId }
+    }, { new : true });
     return res.status(200).json({ product });
   } catch (err) {
     return res.status(500).json({ msg: 'Internal Server Error' });
@@ -81,7 +87,12 @@ exports.deleteProduct = async (req, res) => {
 exports.getOrders = async (req, res) => {
   try {
     const { sellerId } = req.user, { orderSend } = req.query;
-    const orders = await OrderObject.find({ seller: sellerId, orderSend })
+    let filter = { seller: sellerId };
+    if (orderSend) {
+      filter.orderSend = orderSend;
+    }
+    console.log("filter", filter);
+    const orders = await OrderObject.find(filter)
       .populate('product')
     return res.status(200).json({ orders });
   } catch (err) {

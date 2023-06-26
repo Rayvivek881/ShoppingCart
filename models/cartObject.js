@@ -10,7 +10,7 @@ var cartObjectSchema = new mongoose.Schema({
     required: true,
   },
   price : {
-    type: Number,
+    type: Number ,
     required: true,
   },
   product : {
@@ -26,5 +26,6 @@ var cartObjectSchema = new mongoose.Schema({
     ref: 'Seller'
   },
 }, { timestamps: true });
+
 
 module.exports = mongoose.model('CartObject', cartObjectSchema);
