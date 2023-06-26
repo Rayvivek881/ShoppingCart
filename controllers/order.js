@@ -34,15 +34,14 @@ exports.CreateOrder = async (req, res) => {
       temp.push(CartObject.findByIdAndDelete(cartObjects[i]._id, { session }));
       temp.push(Seller.findByIdAndUpdate(seller, { $push: { orders: orderObject._id } }, { session }));
     }
-    console.log(OrderIds, totalPrice);
-    let order = await Order.create([{
+    let order = (await Order.create([{
       buyer: buyerId,
       address: addressId,
       orderObjects: OrderIds,
       total : totalPrice,
       deadline : Date.now() + valueDate,
       status : 'Pending',
-    }], { session }).shift();
+    }], { session })).shift();
     await Buyer.updateOne({ _id: buyerId }, { 
       $set: { cart: [] },
       $push: { orders: order._id },
