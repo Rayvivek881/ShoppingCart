@@ -4,7 +4,7 @@ const Seller = require('../models/seller.js')
 const Address = require('../models/address.js')
 const OrderObject = require('../models/orderObjects.js')
 const Order = require('../models/order.js')
-const { DeleteKeys } = require('../utilites/helperfunctions');
+const mongoose = require('mongoose')
 
 /**
  * @route   POST /api/order/cart
@@ -12,11 +12,13 @@ const { DeleteKeys } = require('../utilites/helperfunctions');
  */
 
 exports.CreateOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { buyerId } = req.user;
     let { addressId, addressObj } = req.body;
     if (addressId == null)
-      addressId = (await Address.create(addressObj))._id;
+      addressId = (await Address.create([addressObj], { session })).shift()._id;
     let cartObjects = await CartObject.find({ buyer: buyerId }), Arr = [];
     let orderObjects = [], temp = [], valueDate = Date.now() + 7 * 24 * 60 * 60 * 1000;
     let OrderIds = [], totalPrice = 0;
@@ -25,32 +27,35 @@ exports.CreateOrder = async (req, res) => {
       const orderObject = new OrderObject({
         name, seller, price, 
         quantity, product, buyer,
-      });
+      }, { session });
       orderObjects.push(orderObject.save());
       OrderIds.push(orderObject._id);
       totalPrice += Number(price) * Number(quantity);
-      temp.push(CartObject.findByIdAndDelete(cartObjects[i]._id));
-      temp.push(Seller.findByIdAndUpdate(seller, { $push: { orders: orderObject._id } }));
+      temp.push(CartObject.findByIdAndDelete(cartObjects[i]._id, { session }));
+      temp.push(Seller.findByIdAndUpdate(seller, { $push: { orders: orderObject._id } }, { session }));
     }
     console.log(OrderIds, totalPrice);
-    let order = await Order.create({
+    let order = await Order.create([{
       buyer: buyerId,
       address: addressId,
       orderObjects: OrderIds,
       total : totalPrice,
       deadline : Date.now() + valueDate,
       status : 'Pending',
-    });
+    }], { session }).shift();
     await Buyer.updateOne({ _id: buyerId }, { 
       $set: { cart: [] },
       $push: { orders: order._id },
       $addToSet : { addresses: addressId },
-    }, { new: true });
+    }, { new: true, session });
     await Promise.all(temp.concat(Arr).concat(orderObjects));
+    await session.commitTransaction();
     return res.status(200).json({ order });
   } catch (err) {
-    console.log(err);
+    await session.abortTransaction();
     return res.status(500).json({ msg: 'Internal Server Error' });
+  } finally {
+    session.endSession();
   }
 }
 

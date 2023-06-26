@@ -3,7 +3,8 @@ var mongoose = require('mongoose');
 var buyerSchema = new mongoose.Schema({
   userId : {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    ref: 'User',
+    required: true,
   },
   addresses : [{
     type: mongoose.Schema.Types.ObjectId,

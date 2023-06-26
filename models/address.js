@@ -40,6 +40,5 @@ var addressSchema = new mongoose.Schema({
   instructions : String
 }, { timestamps: true });
 
-console.log(addressSchema);
 
 module.exports = mongoose.model('Address', addressSchema);

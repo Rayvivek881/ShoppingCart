@@ -1,6 +1,7 @@
 const Buyer = require('../models/buyer');
 const CartObject = require('../models/cartObject');
 const Product = require('../models/product.js');
+const mongoose = require('mongoose');
 
 /**
  * @route   GET /api/buyer/viewProduct
@@ -56,26 +57,34 @@ exports.categoryProduct = async (req, res) => {
  */
 
 exports.addToCart = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { buyerId } = req.user;
     const { productId, name, seller, price } = req.body;
-    const buyer = await Buyer.findById(buyerId);
-    let cartObject = await CartObject.findOne({ buyer: buyerId, product: productId });
+    const buyer = await Buyer.findById(buyerId, null, { session });
+    let cartObject = await CartObject.findOne({ 
+      buyer: buyerId, product: productId 
+    }, null, { session });
     if (cartObject == null) {
       cartObject = new CartObject({
         quantity: 1,
         buyer: buyerId,
         product: productId,
         name, seller, price: price,
-      });
+      }, { session });
     } else cartObject.quantity += 1;
-    await cartObject.save();
+    await cartObject.save({ session });
     if (!buyer.cart.includes(cartObject._id))
       buyer.cart.push(cartObject._id);
-    await buyer.save();
+    await buyer.save({ session });
+    await session.commitTransaction();
     return res.status(200).json({ msg: 'Added to Cart' });
   } catch (err) {
+    await session.abortTransaction();
     return res.status(500).json({ msg: 'Internal Server Error' });
+  } finally {
+    session.endSession();
   }
 };
 

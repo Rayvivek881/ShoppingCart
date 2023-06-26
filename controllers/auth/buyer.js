@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../../models/user');
 const Buyer = require('../../models/buyer');
+const mongoose = require('mongoose');
+const { ObjectId } = require('mongodb');
 
 /**
  * @route   POST /api/auth/buyer/register
@@ -9,14 +11,16 @@ const Buyer = require('../../models/buyer');
  */
 
 exports.registerBuyer = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { name, email, password } = req.body;
     let user = await User.findOne({ email }).select({ _id: 1 });
     if (user == null) {
-      user = await User.create({
+      user = (await User.create([{
         name, email,
         password: await bcrypt.hash(password, 10),
-      });
+      }], { session })).shift();
     }
     let buyer = await Buyer.findOne({ userId: user._id }).select({ _id: 1 });
     if (buyer != null) {
@@ -24,10 +28,15 @@ exports.registerBuyer = async (req, res) => {
         msg: 'Buyer already exists with given email'
       });
     }
-    await Buyer.create({ userId: user._id });
+    console.log("good job..." , user);
+    await Buyer.create([{ userId: user._id }], { session });
+    await session.commitTransaction();
     return res.status(201).json({ msg: "User Created" });
   } catch (err) {
+    await session.abortTransaction();
     return res.status(500).json({ msg: 'Internal Server Error' });
+  } finally {
+    await session.endSession();
   }
 };
 
